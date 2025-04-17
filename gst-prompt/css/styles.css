@@ -1,6 +1,4 @@
-
-/* Container Styles */
-.gst-container {
+.gst-input-container {
     position: fixed;
     top: 10px;
     left: 10px;
@@ -15,28 +13,15 @@
     gap: 8px;
 }
 
-/* Input Field Styles */
 .gst-input {
     padding: 8px;
     font-size: 16px;
     width: 350px;
     border: 1px solid #666;
     border-radius: 5px;
-    outline: none;
-    transition: border-color 0.3s ease;
 }
 
-.gst-input:focus {
-    border-color: #4CAF50;
-    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
-}
-
-.gst-input::placeholder {
-    color: #999;
-}
-
-/* Button Styles */
-.gst-button {
+.gst-send-button {
     padding: 8px 12px;
     font-size: 16px;
     cursor: pointer;
@@ -44,23 +29,8 @@
     background-color: #4CAF50;
     color: white;
     border-radius: 5px;
-    transition: all 0.3s ease;
-    min-width: 120px;
-    font-weight: 500;
 }
 
-.gst-button:hover {
-    background-color: #45a049;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-
-.gst-button:active {
-    transform: translateY(0);
-    box-shadow: none;
-}
-
-/* Modal Styles */
 .gst-modal {
     position: fixed;
     top: 80px;
@@ -71,148 +41,62 @@
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     z-index: 9998;
     overflow: hidden;
-    border: 1px solid #ddd;
 }
 
-/* Status Bar Styles */
 .gst-status-bar {
     width: 100%;
-    padding: 12px;
+    padding: 10px;
     font-size: 14px;
     font-weight: bold;
     text-align: center;
-    transition: all 0.3s ease;
-    border-bottom: 1px solid #eee;
 }
 
-/* Output Container Styles */
-.gst-output-container {
-    padding: 15px;
-    max-height: 500px;
-    overflow-y: auto;
-    border-top: 1px solid #eee;
-    background-color: #fafafa;
-}
-
-/* Status Types */
-.gst-status-success {
+.gst-status-bar[data-status-type="success"] {
     background-color: #4CAF50;
     color: white;
 }
 
-.gst-status-error {
+.gst-status-bar[data-status-type="error"] {
     background-color: #f44336;
     color: white;
 }
 
-.gst-status-processing {
+.gst-status-bar[data-status-type="processing"] {
     background-color: #2196F3;
     color: white;
-    position: relative;
 }
 
-.gst-status-processing::after {
-    content: '...';
-    animation: dots 1.5s infinite;
-    display: inline-block;
-    width: 20px;
-    text-align: left;
+.gst-output-container {
+    padding: 15px;
+    max-height: 500px;
+    overflow-y: auto;
+    display: none;
 }
 
-.gst-status-neutral {
-    background-color: #f5f5f5;
-    color: #333;
-}
-
-/* Scrollbar Styles */
-.gst-output-container::-webkit-scrollbar {
-    width: 8px;
-}
-
-.gst-output-container::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-}
-
-.gst-output-container::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 4px;
-}
-
-.gst-output-container::-webkit-scrollbar-thumb:hover {
-    background: #555;
-}
-
-/* Table Styles within Output Container */
-.gst-output-container table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-    background-color: white;
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.gst-output-container th,
-.gst-output-container td {
-    padding: 12px;
-    text-align: left;
-    border: 1px solid #ddd;
-}
-
-.gst-output-container th {
-    background-color: #f5f5f5;
-    font-weight: 600;
-    color: #333;
-}
-
-.gst-output-container tr:nth-child(even) {
-    background-color: #fafafa;
-}
-
-.gst-output-container tr:hover {
+.gst-visible-input-container {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 9999;
     background-color: #f0f0f0;
+    border: 2px solid #666;
+    padding: 8px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    max-width: 400px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
 }
 
-/* Animation for Processing Status */
-@keyframes dots {
-    0% { content: ''; }
-    25% { content: '.'; }
-    50% { content: '..'; }
-    75% { content: '...'; }
-    100% { content: ''; }
+.gst-visible-input-label {
+    display: block;
+    margin-bottom: 5px;
 }
 
-/* Responsive Styles */
-@media screen and (max-width: 900px) {
-    .gst-modal {
-        width: calc(100% - 40px);
-        margin: 0 20px;
-    }
-    
-    .gst-container {
-        flex-direction: column;
-        width: calc(100% - 40px);
-        margin: 0 20px;
-    }
-    
-    .gst-input {
-        width: 100%;
-    }
-    
-    .gst-button {
-        width: 100%;
-    }
-}
-
-/* Link Styles within Tables */
-.gst-output-container a {
-    color: #2196F3;
-    text-decoration: none;
-    transition: color 0.3s ease;
-}
-
-.gst-output-container a:hover {
-    color: #0d47a1;
-    text-decoration: underline;
+.gst-visible-input {
+    width: 100%;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #999;
+    border-radius: 5px;
 }
