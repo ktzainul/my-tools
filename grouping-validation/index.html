@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Building Data Format Validator</title>
+    <title>CLI Grouping Validation</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -499,6 +499,43 @@
         .copy-button:hover {
             background-color: #e1e1e1;
         }
+        
+        .group-container {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        
+        .group-header {
+            background: #f5f5f5;
+            padding: 8px 15px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .group-status {
+            font-size: 0.85rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        
+        .group-status.valid {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .group-status.invalid {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        
+        .group-lines {
+            padding: 0 5px;
+        }
 
         @media (max-width: 768px) {
             .container {
@@ -584,23 +621,35 @@
         <div class="loader" id="loader"></div>
         
         <div class="title-container">
-            <h1><i class="fas fa-check-circle"></i> Building Data Validator</h1>
-            <p class="subtitle">Quickly validate the tab spacing format of your building data</p>
+            <h1><i class="fas fa-terminal"></i> CLI Grouping Validation</h1>
+            <p class="subtitle">Validate the structure and tab spacing format of your CLI grouping commands</p>
         </div>
         
         <div class="rules-card">
             <div class="rules-title"><i class="fas fa-list-ul"></i> Format Requirements</div>
             <ul>
-                <li><strong>START_GROUPING</strong> row: 0 tab spaces</li>
-                <li><strong>CREATE_BUILDING</strong> row: 38 tab spaces</li>
-                <li><strong>REPARENT_LG_NODE / REPARENT_DG_NODE</strong> rows: 2 tab spaces</li>
-                <li><strong>END_GROUPING</strong> row: 0 tab spaces</li>
+                <li><strong>Tab Spacing:</strong>
+                    <ul style="margin-top: 5px;">
+                        <li><strong>START_GROUPING</strong> row: 0 tab spaces</li>
+                        <li><strong>CREATE_BUILDING</strong> row: 38 tab spaces</li>
+                        <li><strong>REPARENT_LG_NODE / REPARENT_DG_NODE</strong> rows: 2 tab spaces</li>
+                        <li><strong>END_GROUPING</strong> row: 0 tab spaces</li>
+                    </ul>
+                </li>
+                <li style="margin-top: 10px;"><strong>Group Structure:</strong> Each valid group must follow this exact sequence:
+                    <ul style="margin-top: 5px;">
+                        <li>START_GROUPING</li>
+                        <li>CREATE_BUILDING line</li>
+                        <li>REPARENT_LG_NODE or REPARENT_DG_NODE line</li>
+                        <li>END_GROUPING</li>
+                    </ul>
+                </li>
             </ul>
         </div>
         
         <div class="content-section">
             <div class="section-title"><i class="fas fa-file-import"></i> Input Data</div>
-            <textarea id="input-data" placeholder="Paste your building data here to validate the format..."></textarea>
+            <textarea id="input-data" placeholder="Paste your CLI grouping data here to validate the format..."></textarea>
             
             <div class="button-group">
                 <button id="validate-btn" class="btn btn-primary"><i class="fas fa-check-double"></i> Validate Format</button>
@@ -673,6 +722,11 @@
                 let invalidLines = 0;
                 let errors = [];
                 
+                // Group validation stats
+                let validGroups = 0;
+                let invalidGroups = 0;
+                let groupErrors = [];
+                
                 if (inputData.trim() === '') {
                     // No data provided
                     document.body.classList.remove('loading');
@@ -680,7 +734,9 @@
                     return;
                 }
                 
-                // Process each line with a slight delay for animation
+                // First, validate individual lines and their tab counts
+                let lineValidations = [];
+                
                 lines.forEach((line, index) => {
                     const lineNum = index + 1;
                     let isValid = true;
@@ -691,6 +747,13 @@
                     
                     // Skip empty lines
                     if (cleanLine.trim() === '') {
+                        lineValidations.push({
+                            lineNum,
+                            content: '',
+                            isValid: true,
+                            isEmpty: true,
+                            errorMessage: ''
+                        });
                         return;
                     }
                     
@@ -725,35 +788,171 @@
                         errorMessage = 'Unknown line type';
                     }
                     
-                    // Create line element with appropriate styling
-                    const lineDiv = document.createElement('div');
-                    lineDiv.className = `line ${isValid ? 'valid' : 'invalid'}`;
-                    lineDiv.style.animationDelay = `${index * 0.03}s`;
-                    
-                    // Display line with tab visualization if enabled
-                    let displayText = cleanLine;
-                    if (showTabs) {
-                        displayText = displayText.replace(/\t/g, '<span class="tab"></span>');
-                    }
-                    
-                    const icon = isValid ? 
-                        '<i class="fas fa-check-circle success-icon"></i>' :
-                        '<i class="fas fa-exclamation-circle error-icon"></i>';
-                    
-                    lineDiv.innerHTML = `<span class="line-number">${lineNum}:</span> ${icon} ${displayText}`;
-                    
-                    if (!isValid) {
-                        const errorSpan = document.createElement('span');
-                        errorSpan.className = 'error-message';
-                        errorSpan.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${errorMessage}`;
-                        lineDiv.appendChild(errorSpan);
+                    if (isValid) {
+                        validLines++;
+                    } else {
                         invalidLines++;
                         errors.push(`Line ${lineNum}: ${errorMessage}`);
-                    } else {
-                        validLines++;
                     }
                     
-                    resultsDiv.appendChild(lineDiv);
+                    lineValidations.push({
+                        lineNum,
+                        content: cleanLine,
+                        type: cleanLine === 'START_GROUPING' ? 'start' : 
+                               cleanLine === 'END_GROUPING' ? 'end' : 
+                               cleanLine.startsWith('CREATE_BUILDING') ? 'create' : 
+                               (cleanLine.startsWith('REPARENT_LG_NODE') || cleanLine.startsWith('REPARENT_DG_NODE')) ? 'reparent' : 'unknown',
+                        isValid,
+                        isEmpty: false,
+                        errorMessage
+                    });
+                });
+                
+                // Now validate the group structures
+                // Filter out empty lines
+                const nonEmptyLines = lineValidations.filter(line => !line.isEmpty);
+                let currentGroup = [];
+                let groups = [];
+                
+                nonEmptyLines.forEach(line => {
+                    if (line.type === 'start') {
+                        // If we already have lines in the current group, this is an error
+                        if (currentGroup.length > 0) {
+                            const lastLine = currentGroup[currentGroup.length - 1];
+                            groupErrors.push(`Line ${lastLine.lineNum}: Missing END_GROUPING before new START_GROUPING`);
+                            invalidGroups++;
+                            groups.push({
+                                lines: [...currentGroup],
+                                isValid: false,
+                                errorMessage: 'Incomplete group - missing END_GROUPING'
+                            });
+                            currentGroup = [];
+                        }
+                        currentGroup.push(line);
+                    } else if (line.type === 'end') {
+                        currentGroup.push(line);
+                        
+                        // Validate the group structure
+                        let groupValid = true;
+                        let groupErrorMessage = '';
+                        
+                        if (currentGroup.length !== 4) {
+                            groupValid = false;
+                            groupErrorMessage = `Invalid group structure - expected 4 lines, found ${currentGroup.length}`;
+                            groupErrors.push(`Group starting at line ${currentGroup[0].lineNum}: ${groupErrorMessage}`);
+                        } else {
+                            // Check the sequence: start -> create -> reparent -> end
+                            if (currentGroup[0].type !== 'start' || 
+                                currentGroup[1].type !== 'create' || 
+                                currentGroup[2].type !== 'reparent' || 
+                                currentGroup[3].type !== 'end') {
+                                    
+                                groupValid = false;
+                                groupErrorMessage = 'Invalid group sequence - must be START_GROUPING, CREATE_BUILDING, REPARENT_*_NODE, END_GROUPING';
+                                groupErrors.push(`Group starting at line ${currentGroup[0].lineNum}: ${groupErrorMessage}`);
+                            }
+                        }
+                        
+                        // Any individual line errors also make the group invalid
+                        if (currentGroup.some(line => !line.isValid)) {
+                            groupValid = false;
+                            if (!groupErrorMessage) {
+                                groupErrorMessage = 'Group contains lines with invalid tab spacing';
+                            }
+                        }
+                        
+                        if (groupValid) {
+                            validGroups++;
+                        } else {
+                            invalidGroups++;
+                        }
+                        
+                        groups.push({
+                            lines: [...currentGroup],
+                            isValid: groupValid,
+                            errorMessage: groupErrorMessage
+                        });
+                        
+                        currentGroup = [];
+                    } else {
+                        currentGroup.push(line);
+                    }
+                });
+                
+                // Check if there's an incomplete group at the end
+                if (currentGroup.length > 0) {
+                    groupErrors.push(`Group starting at line ${currentGroup[0].lineNum}: Incomplete group - missing END_GROUPING`);
+                    invalidGroups++;
+                    groups.push({
+                        lines: [...currentGroup],
+                        isValid: false,
+                        errorMessage: 'Incomplete group - missing END_GROUPING'
+                    });
+                }
+                
+                // Render the results by group
+                groups.forEach((group, groupIndex) => {
+                    const groupContainer = document.createElement('div');
+                    groupContainer.className = 'group-container';
+                    
+                    // Create group header
+                    const groupHeader = document.createElement('div');
+                    groupHeader.className = 'group-header';
+                    
+                    const startLine = group.lines.length > 0 ? group.lines[0].lineNum : '?';
+                    groupHeader.innerHTML = `
+                        <div>Group ${groupIndex + 1} (Lines ${startLine}-${startLine + group.lines.length - 1})</div>
+                        <div class="group-status ${group.isValid ? 'valid' : 'invalid'}">
+                            ${group.isValid ? 
+                                '<i class="fas fa-check-circle"></i> Valid' : 
+                                '<i class="fas fa-exclamation-circle"></i> Invalid'}
+                        </div>
+                    `;
+                    
+                    groupContainer.appendChild(groupHeader);
+                    
+                    // Create container for lines
+                    const groupLines = document.createElement('div');
+                    groupLines.className = 'group-lines';
+                    
+                    // Add each line
+                    group.lines.forEach(line => {
+                        const lineDiv = document.createElement('div');
+                        lineDiv.className = `line ${line.isValid ? 'valid' : 'invalid'}`;
+                        
+                        // Display line with tab visualization if enabled
+                        let displayText = line.content;
+                        if (showTabs) {
+                            displayText = displayText.replace(/\t/g, '<span class="tab"></span>');
+                        }
+                        
+                        const icon = line.isValid ? 
+                            '<i class="fas fa-check-circle success-icon"></i>' :
+                            '<i class="fas fa-exclamation-circle error-icon"></i>';
+                        
+                        lineDiv.innerHTML = `<span class="line-number">${line.lineNum}:</span> ${icon} ${displayText}`;
+                        
+                        if (!line.isValid) {
+                            const errorSpan = document.createElement('span');
+                            errorSpan.className = 'error-message';
+                            errorSpan.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${line.errorMessage}`;
+                            lineDiv.appendChild(errorSpan);
+                        }
+                        
+                        groupLines.appendChild(lineDiv);
+                    });
+                    
+                    // If the group has a structural error, show it
+                    if (!group.isValid && group.errorMessage) {
+                        const groupError = document.createElement('div');
+                        groupError.className = 'error-message';
+                        groupError.style.margin = '0 15px 15px';
+                        groupError.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Group Error: ${group.errorMessage}`;
+                        groupLines.appendChild(groupError);
+                    }
+                    
+                    groupContainer.appendChild(groupLines);
+                    resultsDiv.appendChild(groupContainer);
                 });
                 
                 // Update summary
@@ -761,13 +960,19 @@
                 
                 // Create stats
                 const totalLines = validLines + invalidLines;
-                const validPercentage = totalLines > 0 ? Math.round((validLines / totalLines) * 100) : 0;
+                const validLinePercentage = totalLines > 0 ? Math.round((validLines / totalLines) * 100) : 0;
+                const totalGroups = validGroups + invalidGroups;
+                const validGroupPercentage = totalGroups > 0 ? Math.round((validGroups / totalGroups) * 100) : 0;
                 
                 const statItems = [
                     { label: 'Total Lines', value: totalLines, icon: 'fa-list' },
-                    { label: 'Valid', value: validLines, icon: 'fa-check-circle' },
-                    { label: 'Invalid', value: invalidLines, icon: 'fa-times-circle' },
-                    { label: 'Valid %', value: `${validPercentage}%`, icon: 'fa-percentage' }
+                    { label: 'Valid Lines', value: validLines, icon: 'fa-check-circle' },
+                    { label: 'Invalid Lines', value: invalidLines, icon: 'fa-times-circle' },
+                    { label: 'Lines Valid %', value: `${validLinePercentage}%`, icon: 'fa-percentage' },
+                    { label: 'Total Groups', value: totalGroups, icon: 'fa-object-group' },
+                    { label: 'Valid Groups', value: validGroups, icon: 'fa-check-double' },
+                    { label: 'Invalid Groups', value: invalidGroups, icon: 'fa-exclamation-triangle' },
+                    { label: 'Groups Valid %', value: `${validGroupPercentage}%`, icon: 'fa-percentage' }
                 ];
                 
                 statItems.forEach(item => {
@@ -781,17 +986,19 @@
                 });
                 
                 // Display errors or success message
-                if (invalidLines > 0) {
+                const allErrors = [...errors, ...groupErrors];
+                
+                if (allErrors.length > 0) {
                     errorsContainer.innerHTML = `
-                        <div class="errors-title"><i class="fas fa-exclamation-triangle"></i> Found ${invalidLines} errors:</div>
+                        <div class="errors-title"><i class="fas fa-exclamation-triangle"></i> Found ${allErrors.length} errors:</div>
                         <div class="errors-list">
-                            ${errors.map(error => `<div class="error-item">${error}</div>`).join('')}
+                            ${allErrors.map(error => `<div class="error-item">${error}</div>`).join('')}
                         </div>
                     `;
                 } else if (totalLines > 0) {
                     errorsContainer.innerHTML = `
                         <div class="no-errors">
-                            <i class="fas fa-check-circle"></i> All lines match the expected format!
+                            <i class="fas fa-check-circle"></i> All lines and groups match the expected format!
                         </div>
                     `;
                 }
@@ -801,7 +1008,7 @@
             }, 300); // Short delay for loading animation
         }
         
-        // Add sample data
+        // Add sample data button functionality
         function addSampleData() {
             const sampleData = `START_GROUPING
 CREATE_BUILDING	TRUE	EG	ALEXANDIRA		SMOUHA	QISM SIDI GABIR		TAAWONEYAT SEMOUHA HOUSING				AL MADEN STREET			BUILDING	42																					PRIMARY	EGC16912474
@@ -814,19 +1021,6 @@ END_GROUPING`;
             
             document.getElementById('input-data').value = sampleData;
         }
-        
-        // Copy to clipboard functionality for results
-        document.addEventListener('click', function(e) {
-            if (e.target && e.target.classList.contains('copy-button')) {
-                const text = e.target.getAttribute('data-copy');
-                navigator.clipboard.writeText(text).then(() => {
-                    e.target.textContent = 'Copied!';
-                    setTimeout(() => {
-                        e.target.textContent = 'Copy';
-                    }, 2000);
-                });
-            }
-        });
         
         // Add intro animation
         document.addEventListener('DOMContentLoaded', function() {
