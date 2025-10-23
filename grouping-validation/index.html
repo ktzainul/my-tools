@@ -640,7 +640,7 @@
                     <ul style="margin-top: 5px;">
                         <li>START_GROUPING</li>
                         <li>CREATE_BUILDING line</li>
-                        <li>REPARENT_LG_NODE or REPARENT_DG_NODE line</li>
+                        <li>Any number of REPARENT_LG_NODE or REPARENT_DG_NODE lines</li>
                         <li>END_GROUPING</li>
                     </ul>
                 </li>
@@ -836,20 +836,40 @@
                         let groupValid = true;
                         let groupErrorMessage = '';
                         
-                        if (currentGroup.length !== 4) {
+                        // Check the minimum required structure (at least 3 lines)
+                        if (currentGroup.length < 3) {
                             groupValid = false;
-                            groupErrorMessage = `Invalid group structure - expected 4 lines, found ${currentGroup.length}`;
+                            groupErrorMessage = `Invalid group structure - too few lines (${currentGroup.length}), need at least 3`;
                             groupErrors.push(`Group starting at line ${currentGroup[0].lineNum}: ${groupErrorMessage}`);
                         } else {
-                            // Check the sequence: start -> create -> reparent -> end
-                            if (currentGroup[0].type !== 'start' || 
-                                currentGroup[1].type !== 'create' || 
-                                currentGroup[2].type !== 'reparent' || 
-                                currentGroup[3].type !== 'end') {
-                                    
+                            // Check the sequence: 
+                            // 1. start 
+                            // 2. create 
+                            // 3. any number of reparent lines 
+                            // 4. end
+                            
+                            if (currentGroup[0].type !== 'start') {
                                 groupValid = false;
-                                groupErrorMessage = 'Invalid group sequence - must be START_GROUPING, CREATE_BUILDING, REPARENT_*_NODE, END_GROUPING';
+                                groupErrorMessage = 'Group must start with START_GROUPING';
                                 groupErrors.push(`Group starting at line ${currentGroup[0].lineNum}: ${groupErrorMessage}`);
+                            } else if (currentGroup[1].type !== 'create') {
+                                groupValid = false;
+                                groupErrorMessage = 'Second line must be CREATE_BUILDING';
+                                groupErrors.push(`Group starting at line ${currentGroup[0].lineNum}: ${groupErrorMessage}`);
+                            } else if (currentGroup[currentGroup.length - 1].type !== 'end') {
+                                groupValid = false;
+                                groupErrorMessage = 'Group must end with END_GROUPING';
+                                groupErrors.push(`Group starting at line ${currentGroup[0].lineNum}: ${groupErrorMessage}`);
+                            } else {
+                                // Check that all lines between CREATE_BUILDING and END_GROUPING are REPARENT lines
+                                for (let i = 2; i < currentGroup.length - 1; i++) {
+                                    if (currentGroup[i].type !== 'reparent') {
+                                        groupValid = false;
+                                        groupErrorMessage = `Line ${currentGroup[i].lineNum} should be REPARENT_LG_NODE or REPARENT_DG_NODE`;
+                                        groupErrors.push(`Group starting at line ${currentGroup[0].lineNum}: ${groupErrorMessage}`);
+                                        break;
+                                    }
+                                }
                             }
                         }
                         
@@ -900,8 +920,9 @@
                     groupHeader.className = 'group-header';
                     
                     const startLine = group.lines.length > 0 ? group.lines[0].lineNum : '?';
+                    const endLine = group.lines.length > 0 ? group.lines[group.lines.length - 1].lineNum : '?';
                     groupHeader.innerHTML = `
-                        <div>Group ${groupIndex + 1} (Lines ${startLine}-${startLine + group.lines.length - 1})</div>
+                        <div>Group ${groupIndex + 1} (Lines ${startLine}-${endLine})</div>
                         <div class="group-status ${group.isValid ? 'valid' : 'invalid'}">
                             ${group.isValid ? 
                                 '<i class="fas fa-check-circle"></i> Valid' : 
@@ -1013,6 +1034,8 @@
             const sampleData = `START_GROUPING
 CREATE_BUILDING	TRUE	EG	ALEXANDIRA		SMOUHA	QISM SIDI GABIR		TAAWONEYAT SEMOUHA HOUSING				AL MADEN STREET			BUILDING	42																					PRIMARY	EGC16912474
 REPARENT_LG_NODE	EGR1074424181	
+REPARENT_LG_NODE	EGR2074424182	
+REPARENT_DG_NODE	EGR3074424183	
 END_GROUPING
 START_GROUPING
 CREATE_BUILDING	TRUE	EG	ALEXANDIRA		SMOUHA	QISM SIDI GABIR		ANTONIADIS CITY COMPOUND				CAIRO  ALEXANDRIA AGRICULTURAL ROAD			BUILDING	A1																					PRIMARY	EGC16912474
