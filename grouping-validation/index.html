@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Building Data Format Validator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-light: #4895ef;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --dark: #242424;
+            --light: #f8f9fa;
+            --grey: #e9ecef;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 30px 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: var(--transition);
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.5s forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: var(--dark);
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 600;
+            font-size: 2.2rem;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .title-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1rem;
+            margin-top: 5px;
+        }
+
+        .rules-card {
+            background: linear-gradient(to right, #f6f9fe, #f0f4fc);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03);
+            transition: var(--transition);
+        }
+
+        .rules-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .rules-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .rules-title i {
+            margin-right: 8px;
+        }
+
+        .rules-card ul {
+            list-style-type: none;
+            padding-left: 25px;
+        }
+
+        .rules-card li {
+            position: relative;
+            padding: 4px 0;
+            font-size: 0.95rem;
+        }
+
+        .rules-card li:before {
+            content: "•";
+            color: var(--primary);
+            font-weight: bold;
+            position: absolute;
+            left: -15px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 220px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: var(--transition);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(to right, var(--primary), var(--primary-light));
+            color: white;
+            box-shadow: 0 4px 10px rgba(67, 97, 238, 0.25);
+            flex: 2;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(to right, var(--secondary), #4c3fc1);
+            color: white;
+            box-shadow: 0 4px 10px rgba(63, 55, 201, 0.25);
+            flex: 1;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
+            margin-bottom: 30px;
+        }
+
+        .toggle-label {
+            margin-left: 10px;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        .summary {
+            margin-top: 25px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeIn 0.5s forwards 0.2s;
+            border-top: 3px solid var(--primary);
+        }
+
+        .summary-title {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .summary-title i {
+            margin-right: 8px;
+            color: var(--primary);
+        }
+
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .stat {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            border-radius: 8px;
+            flex: 1;
+            min-width: 120px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+            transition: var(--transition);
+        }
+
+        .stat:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .errors-list {
+            margin-top: 15px;
+            max-height: 150px;
+            overflow-y: auto;
+            border-left: 3px solid var(--danger);
+            padding-left: 15px;
+        }
+
+        .errors-list:empty {
+            display: none;
+        }
+
+        .errors-title {
+            font-weight: 600;
+            color: var(--danger);
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .errors-title i {
+            margin-right: 8px;
+        }
+
+        .error-item {
+            margin: 5px 0;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .results {
+            margin-top: 25px;
+        }
+
+        .line {
+            padding: 12px 15px;
+            margin: 8px 0;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            white-space: pre;
+            overflow-x: auto;
+            font-size: 14px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: var(--transition);
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeIn 0.3s forwards;
+        }
+
+        .line:hover {
+            transform: scale(1.01);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        .valid {
+            background-color: #edf7ed;
+            border-left: 4px solid #4caf50;
+        }
+
+        .invalid {
+            background-color: #fdeff3;
+            border-left: 4px solid var(--danger);
+        }
+
+        .line-number {
+            color: #999;
+            margin-right: 8px;
+            user-select: none;
+        }
+
+        .error-message {
+            color: var(--danger);
+            font-weight: 500;
+            margin-left: 10px;
+            display: block;
+            margin-top: 8px;
+            padding-left: 10px;
+            border-left: 2px solid var(--danger);
+        }
+
+        .tabs-visible .tab {
+            position: relative;
+            display: inline-block;
+            width: 1ch;
+            height: 1em;
+            background-color: rgba(173, 216, 230, 0.2);
+            margin: 0 -1px;
+            border-radius: 2px;
+        }
+
+        .tabs-visible .tab::after {
+            content: "›";
+            color: #aaa;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10px;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.4;
+            }
+            50% {
+                opacity: 0.8;
+            }
+            100% {
+                opacity: 0.4;
+            }
+        }
+
+        .tabs-visible .tab {
+            animation: pulse 1.5s infinite;
+        }
+
+        .success-icon {
+            color: #4caf50;
+            margin-right: 5px;
+        }
+
+        .error-icon {
+            color: var(--danger);
+            margin-right: 5px;
+        }
+
+        .no-errors {
+            padding: 15px;
+            background-color: #edf7ed;
+            border-radius: 8px;
+            margin: 15px 0;
+            color: #2e7d32;
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+        }
+
+        .loader {
+            height: 4px;
+            width: 100%;
+            background: linear-gradient(to right, var(--primary), var(--success));
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: scaleX(0);
+            transform-origin: left;
+            opacity: 0;
+            transition: transform 0.6s ease-out, opacity 0.1s linear;
+        }
+
+        .loading .loader {
+            opacity: 1;
+            transform: scaleX(1);
+        }
+
+        .content-section {
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 10px;
+            background: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title i {
+            margin-right: 8px;
+            color: var(--primary);
+        }
+
+        .copy-button {
+            background-color: #f1f1f1;
+            border: none;
+            padding: 5px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            margin-left: 10px;
+            transition: var(--transition);
+        }
+
+        .copy-button:hover {
+            background-color: #e1e1e1;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .stats {
+                flex-direction: column;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+
+        /* Dark mode toggle */
+        .theme-switch-wrapper {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .theme-switch {
+            display: inline-block;
+            height: 26px;
+            position: relative;
+            width: 50px;
+        }
+
+        .theme-switch input {
+            display: none;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 140px;
+            background-color: var(--dark);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.8rem;
+        }
+
+        .tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: var(--dark) transparent transparent transparent;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="loader" id="loader"></div>
+        
+        <div class="title-container">
+            <h1><i class="fas fa-check-circle"></i> Building Data Validator</h1>
+            <p class="subtitle">Quickly validate the tab spacing format of your building data</p>
+        </div>
+        
+        <div class="rules-card">
+            <div class="rules-title"><i class="fas fa-list-ul"></i> Format Requirements</div>
+            <ul>
+                <li><strong>START_GROUPING</strong> row: 0 tab spaces</li>
+                <li><strong>CREATE_BUILDING</strong> row: 38 tab spaces</li>
+                <li><strong>REPARENT_LG_NODE / REPARENT_DG_NODE</strong> rows: 2 tab spaces</li>
+                <li><strong>END_GROUPING</strong> row: 0 tab spaces</li>
+            </ul>
+        </div>
+        
+        <div class="content-section">
+            <div class="section-title"><i class="fas fa-file-import"></i> Input Data</div>
+            <textarea id="input-data" placeholder="Paste your building data here to validate the format..."></textarea>
+            
+            <div class="button-group">
+                <button id="validate-btn" class="btn btn-primary"><i class="fas fa-check-double"></i> Validate Format</button>
+                <button id="clear-btn" class="btn btn-secondary"><i class="fas fa-eraser"></i> Clear</button>
+            </div>
+            
+            <div class="toggle-container">
+                <label class="switch tooltip">
+                    <input type="checkbox" id="show-tabs-toggle">
+                    <span class="slider"></span>
+                    <span class="tooltiptext">Show tab characters visually</span>
+                </label>
+                <span class="toggle-label">Show tab characters</span>
+            </div>
+        </div>
+        
+        <div id="summary-container" style="display: none;">
+            <div class="summary" id="summary">
+                <div class="summary-title"><i class="fas fa-chart-pie"></i> Validation Summary</div>
+                <div class="stats" id="stats-container">
+                    <!-- Stats will be inserted here -->
+                </div>
+                <div id="errors-container">
+                    <!-- Errors will be inserted here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="results" id="results"></div>
+    </div>
+
+    <script>
+        document.getElementById('validate-btn').addEventListener('click', validateData);
+        document.getElementById('show-tabs-toggle').addEventListener('change', toggleTabVisibility);
+        document.getElementById('clear-btn').addEventListener('click', clearData);
+        
+        let showTabs = false;
+        
+        function toggleTabVisibility() {
+            showTabs = !showTabs;
+            document.getElementById('results').classList.toggle('tabs-visible');
+            if (document.getElementById('results').innerHTML.trim() !== '') {
+                validateData(); // Re-run to update display
+            }
+        }
+        
+        function clearData() {
+            document.getElementById('input-data').value = '';
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('summary-container').style.display = 'none';
+        }
+        
+        function validateData() {
+            // Show loading indicator
+            document.body.classList.add('loading');
+            
+            setTimeout(() => {
+                const inputData = document.getElementById('input-data').value;
+                const lines = inputData.split('\n');
+                const resultsDiv = document.getElementById('results');
+                const summaryContainer = document.getElementById('summary-container');
+                const statsContainer = document.getElementById('stats-container');
+                const errorsContainer = document.getElementById('errors-container');
+                
+                resultsDiv.innerHTML = '';
+                statsContainer.innerHTML = '';
+                errorsContainer.innerHTML = '';
+                
+                let validLines = 0;
+                let invalidLines = 0;
+                let errors = [];
+                
+                if (inputData.trim() === '') {
+                    // No data provided
+                    document.body.classList.remove('loading');
+                    alert('Please paste some data to validate.');
+                    return;
+                }
+                
+                // Process each line with a slight delay for animation
+                lines.forEach((line, index) => {
+                    const lineNum = index + 1;
+                    let isValid = true;
+                    let errorMessage = '';
+                    
+                    // Trim trailing carriage returns that might be present
+                    const cleanLine = line.replace(/\r$/, '');
+                    
+                    // Skip empty lines
+                    if (cleanLine.trim() === '') {
+                        return;
+                    }
+                    
+                    // Count tabs
+                    const tabCount = (cleanLine.match(/\t/g) || []).length;
+                    
+                    // Check formatting based on line type
+                    if (cleanLine === 'START_GROUPING' || cleanLine === 'END_GROUPING') {
+                        if (tabCount !== 0) {
+                            isValid = false;
+                            errorMessage = `Expected 0 tabs, found ${tabCount} tabs`;
+                        }
+                    } else if (cleanLine.startsWith('CREATE_BUILDING')) {
+                        if (tabCount !== 38) {
+                            isValid = false;
+                            errorMessage = `Expected 38 tabs, found ${tabCount} tabs`;
+                        }
+                    } else if (cleanLine.startsWith('REPARENT_LG_NODE') || cleanLine.startsWith('REPARENT_DG_NODE')) {
+                        if (tabCount !== 2) {
+                            isValid = false;
+                            errorMessage = `Expected 2 tabs, found ${tabCount} tabs`;
+                        }
+                        
+                        // Check if the second tab is at the end of the line
+                        const parts = cleanLine.split('\t');
+                        if (parts.length === 3 && parts[2] !== '') {
+                            isValid = false;
+                            errorMessage = 'Second tab should be at the end of the line';
+                        }
+                    } else {
+                        isValid = false;
+                        errorMessage = 'Unknown line type';
+                    }
+                    
+                    // Create line element with appropriate styling
+                    const lineDiv = document.createElement('div');
+                    lineDiv.className = `line ${isValid ? 'valid' : 'invalid'}`;
+                    lineDiv.style.animationDelay = `${index * 0.03}s`;
+                    
+                    // Display line with tab visualization if enabled
+                    let displayText = cleanLine;
+                    if (showTabs) {
+                        displayText = displayText.replace(/\t/g, '<span class="tab"></span>');
+                    }
+                    
+                    const icon = isValid ? 
+                        '<i class="fas fa-check-circle success-icon"></i>' :
+                        '<i class="fas fa-exclamation-circle error-icon"></i>';
+                    
+                    lineDiv.innerHTML = `<span class="line-number">${lineNum}:</span> ${icon} ${displayText}`;
+                    
+                    if (!isValid) {
+                        const errorSpan = document.createElement('span');
+                        errorSpan.className = 'error-message';
+                        errorSpan.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${errorMessage}`;
+                        lineDiv.appendChild(errorSpan);
+                        invalidLines++;
+                        errors.push(`Line ${lineNum}: ${errorMessage}`);
+                    } else {
+                        validLines++;
+                    }
+                    
+                    resultsDiv.appendChild(lineDiv);
+                });
+                
+                // Update summary
+                summaryContainer.style.display = 'block';
+                
+                // Create stats
+                const totalLines = validLines + invalidLines;
+                const validPercentage = totalLines > 0 ? Math.round((validLines / totalLines) * 100) : 0;
+                
+                const statItems = [
+                    { label: 'Total Lines', value: totalLines, icon: 'fa-list' },
+                    { label: 'Valid', value: validLines, icon: 'fa-check-circle' },
+                    { label: 'Invalid', value: invalidLines, icon: 'fa-times-circle' },
+                    { label: 'Valid %', value: `${validPercentage}%`, icon: 'fa-percentage' }
+                ];
+                
+                statItems.forEach(item => {
+                    const statElement = document.createElement('div');
+                    statElement.className = 'stat';
+                    statElement.innerHTML = `
+                        <div class="stat-value">${item.value}</div>
+                        <div class="stat-label"><i class="fas ${item.icon}"></i> ${item.label}</div>
+                    `;
+                    statsContainer.appendChild(statElement);
+                });
+                
+                // Display errors or success message
+                if (invalidLines > 0) {
+                    errorsContainer.innerHTML = `
+                        <div class="errors-title"><i class="fas fa-exclamation-triangle"></i> Found ${invalidLines} errors:</div>
+                        <div class="errors-list">
+                            ${errors.map(error => `<div class="error-item">${error}</div>`).join('')}
+                        </div>
+                    `;
+                } else if (totalLines > 0) {
+                    errorsContainer.innerHTML = `
+                        <div class="no-errors">
+                            <i class="fas fa-check-circle"></i> All lines match the expected format!
+                        </div>
+                    `;
+                }
+                
+                // Remove loading indicator
+                document.body.classList.remove('loading');
+            }, 300); // Short delay for loading animation
+        }
+        
+        // Add sample data
+        function addSampleData() {
+            const sampleData = `START_GROUPING
+CREATE_BUILDING	TRUE	EG	ALEXANDIRA		SMOUHA	QISM SIDI GABIR		TAAWONEYAT SEMOUHA HOUSING				AL MADEN STREET			BUILDING	42																					PRIMARY	EGC16912474
+REPARENT_LG_NODE	EGR1074424181	
+END_GROUPING
+START_GROUPING
+CREATE_BUILDING	TRUE	EG	ALEXANDIRA		SMOUHA	QISM SIDI GABIR		ANTONIADIS CITY COMPOUND				CAIRO  ALEXANDRIA AGRICULTURAL ROAD			BUILDING	A1																					PRIMARY	EGC16912474
+REPARENT_LG_NODE	EGR1404027141	
+END_GROUPING`;
+            
+            document.getElementById('input-data').value = sampleData;
+        }
+        
+        // Copy to clipboard functionality for results
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.classList.contains('copy-button')) {
+                const text = e.target.getAttribute('data-copy');
+                navigator.clipboard.writeText(text).then(() => {
+                    e.target.textContent = 'Copied!';
+                    setTimeout(() => {
+                        e.target.textContent = 'Copy';
+                    }, 2000);
+                });
+            }
+        });
+        
+        // Add intro animation
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                document.querySelector('.container').style.opacity = '1';
+                document.querySelector('.container').style.transform = 'translateY(0)';
+            }, 100);
+        });
+    </script>
+</body>
+</html>
