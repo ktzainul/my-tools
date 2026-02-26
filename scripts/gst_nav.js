@@ -6,31 +6,25 @@
         "https://na.geostudio.last-mile.amazon.dev",
         "https://fe.geostudio.last-mile.amazon.dev"
     ];
-
     // 2. Check if the current page matches the target URLs
     const currentOrigin = window.location.origin;
     const isTargetPage = allowedOrigins.some(origin => currentOrigin.includes(origin));
-
     if (!isTargetPage) {
         return;
     }
-
     // 3. Prevent duplicate injection
     if (document.getElementById('gst-custom-nav-container')) {
         return;
     }
-
     // 4. Create the Overarching Container
     const navContainer = document.createElement('div');
     navContainer.id = 'gst-custom-nav-container';
-
     // --- Container Styling ---
     navContainer.style.position = 'fixed';
     navContainer.style.top = '6px'; // Slightly adjusted to center SVG better
     navContainer.style.left = '60px'; // Pushed to 60px as requested 
     navContainer.style.zIndex = '10000';
     navContainer.style.fontFamily = 'Amazon Ember, Arial, sans-serif';
-
     // 5. Create the "GST Tools" Main SVG Button
     const mainBtn = document.createElement('div');
     mainBtn.title = 'GST Tools';
@@ -54,7 +48,6 @@
     `;
     
     const svgPath = mainBtn.querySelector('svg');
-
     // Hover effect for SVG button
     mainBtn.onmouseover = () => { 
         mainBtn.style.backgroundColor = '#f3f4f6'; 
@@ -85,11 +78,9 @@
     dropdown.style.flexDirection = 'column';
     dropdown.style.gap = '10px';
     dropdown.style.maxHeight = '70vh'; // Don't let it go offscreen
-
     // 7. Search Bar Wrapper
     const searchWrapper = document.createElement('div');
     searchWrapper.style.position = 'relative';
-
     const searchInput = document.createElement('input');
     searchInput.type = 'text';
     searchInput.placeholder = 'Search tools...';
@@ -110,10 +101,8 @@
     searchIcon.style.transform = 'translateY(-50%)';
     searchIcon.style.fontSize = '12px';
     searchIcon.style.color = '#9ca3af';
-
     searchWrapper.appendChild(searchIcon);
     searchWrapper.appendChild(searchInput);
-
     // 8. The List Container (Re-using original ID so TM scripts don't break)
     const toolsList = document.createElement('div');
     toolsList.id = 'gst-custom-nav-bar'; // 👈 CRITICAL: TM Scripts will look for this!
@@ -122,7 +111,6 @@
     toolsList.style.gap = '8px';
     toolsList.style.overflowY = 'auto';
     toolsList.style.paddingRight = '4px';
-
     // 9. Live Search Functionality
     searchInput.addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase();
@@ -137,7 +125,6 @@
             }
         }
     });
-
     // 10. Toggle Dropdown Menu
     mainBtn.onclick = (e) => {
         e.stopPropagation(); // Prevent document click from closing it instantly
@@ -148,14 +135,12 @@
             dropdown.style.display = 'none';
         }
     };
-
     // Close dropdown when clicking anywhere else on the screen
     document.addEventListener('click', (e) => {
         if (!navContainer.contains(e.target)) {
             dropdown.style.display = 'none';
         }
     });
-
     // Assemble the UI hierarchy
     dropdown.appendChild(searchWrapper);
     dropdown.appendChild(toolsList);
@@ -164,7 +149,6 @@
     
     // Inject into page
     document.body.appendChild(navContainer);
-
     // 11. Custom Syling for Appended Tools
     // This watches the list and automatically restyles TM Buttons into dropdown menu items
     const observer = new MutationObserver((mutations) => {
@@ -192,5 +176,4 @@
     
     // Start observing for changes
     observer.observe(toolsList, { childList: true });
-
 })();
