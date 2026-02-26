@@ -37,6 +37,7 @@
     mainBtn.style.justifyContent = 'center';
     mainBtn.style.alignItems = 'center';
     mainBtn.style.borderRadius = '50%';
+    mainBtn.style.zIndex = '1';
     mainBtn.style.transition = 'all 0.2s ease';
     
     // Inject the SVG Icon (Wrench/Settings Icon)
