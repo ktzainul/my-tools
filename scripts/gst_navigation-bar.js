@@ -22,7 +22,7 @@
     // --- Container Styling ---
     navContainer.style.position = 'fixed';
     navContainer.style.top = '6px'; // Slightly adjusted to center SVG better
-    navContainer.style.left = '60px'; // Pushed to 60px as requested 
+    navContainer.style.left = '160px'; // Pushed to 160px as requested 
     navContainer.style.zIndex = '10000';
     navContainer.style.fontFamily = 'Amazon Ember, Arial, sans-serif';
     // 5. Create the "GST Tools" Main SVG Button
