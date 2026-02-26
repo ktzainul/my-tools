@@ -26,28 +26,48 @@
 
     // --- Container Styling ---
     navContainer.style.position = 'fixed';
-    navContainer.style.top = '2px'; 
-    navContainer.style.left = '30px'; 
+    navContainer.style.top = '6px'; // Slightly adjusted to center SVG better
+    navContainer.style.left = '60px'; // Pushed to 60px as requested 
     navContainer.style.zIndex = '10000';
     navContainer.style.fontFamily = 'Amazon Ember, Arial, sans-serif';
 
-    // 5. Create the "GST Tools" Main Button
-    const mainBtn = document.createElement('button');
-    mainBtn.innerText = 'GST Tools 🛠️';
-    mainBtn.style.backgroundColor = '#232f3e';
-    mainBtn.style.color = '#ffffff';
-    mainBtn.style.border = '1px solid #111';
-    mainBtn.style.padding = '8px 16px';
-    mainBtn.style.borderRadius = '6px';
+    // 5. Create the "GST Tools" Main SVG Button
+    const mainBtn = document.createElement('div');
+    mainBtn.title = 'GST Tools';
+    mainBtn.style.width = '32px';
+    mainBtn.style.height = '32px';
+    mainBtn.style.backgroundColor = 'transparent';
+    mainBtn.style.border = 'none';
     mainBtn.style.cursor = 'pointer';
-    mainBtn.style.fontWeight = 'bold';
-    mainBtn.style.fontSize = '13px';
-    mainBtn.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
-    mainBtn.style.transition = 'background-color 0.2s';
+    mainBtn.style.display = 'flex';
+    mainBtn.style.justifyContent = 'center';
+    mainBtn.style.alignItems = 'center';
+    mainBtn.style.borderRadius = '50%';
+    mainBtn.style.transition = 'all 0.2s ease';
     
-    // Hover effect
-    mainBtn.onmouseover = () => mainBtn.style.backgroundColor = '#374151';
-    mainBtn.onmouseout = () => mainBtn.style.backgroundColor = '#232f3e';
+    // Inject the SVG Icon (Wrench/Settings Icon)
+    mainBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#232f3e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; transition: stroke 0.2s;">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+    `;
+    
+    const svgPath = mainBtn.querySelector('svg');
+
+    // Hover effect for SVG button
+    mainBtn.onmouseover = () => { 
+        mainBtn.style.backgroundColor = '#f3f4f6'; 
+        mainBtn.style.transform = 'scale(1.05)';
+        svgPath.setAttribute('stroke', '#000000');
+    };
+    mainBtn.onmouseout = () => { 
+        mainBtn.style.backgroundColor = 'transparent'; 
+        mainBtn.style.transform = 'scale(1)';
+        svgPath.setAttribute('stroke', '#232f3e');
+    };
+    mainBtn.onmousedown = () => { mainBtn.style.transform = 'scale(0.95)'; };
+    mainBtn.onmouseup = () => { mainBtn.style.transform = 'scale(1.05)'; };
     
     // 6. Create the Dropdown Panel
     const dropdown = document.createElement('div');
@@ -55,7 +75,7 @@
     dropdown.style.position = 'absolute';
     dropdown.style.top = '100%';
     dropdown.style.left = '0';
-    dropdown.style.marginTop = '8px';
+    dropdown.style.marginTop = '4px';
     dropdown.style.backgroundColor = '#ffffff';
     dropdown.style.border = '1px solid #e5e7eb';
     dropdown.style.borderRadius = '8px';
